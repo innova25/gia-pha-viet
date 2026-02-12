@@ -5,26 +5,35 @@ import { Person, RawPersonExcelRow, TreeData, Gender, GraphNodeData } from '../t
 
 // --- IMPORT LOGIC ---
 
+const parseExcelBuffer = (buffer: ArrayBuffer): TreeData => {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  const jsonData = XLSX.utils.sheet_to_json<RawPersonExcelRow>(worksheet);
+  
+  return normalizeData(jsonData);
+};
+
 export const parseExcelToTree = async (file: File): Promise<TreeData> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json<RawPersonExcelRow>(worksheet);
-        
-        const treeData = normalizeData(jsonData);
-        resolve(treeData);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    reader.onerror = (err) => reject(err);
-    reader.readAsArrayBuffer(file);
-  });
+  const buffer = await file.arrayBuffer();
+  return parseExcelBuffer(buffer);
+};
+
+export const loadTreeFromUrl = async (url: string): Promise<TreeData> => {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+        // If file doesn't exist, return empty tree (user can upload later)
+        console.warn(`Could not load Excel file from ${url}: ${response.statusText}`);
+        return { persons: {}, rootId: null };
+    }
+    const buffer = await response.arrayBuffer();
+    return parseExcelBuffer(buffer);
+  } catch (error) {
+    console.error("Error loading Excel from URL:", error);
+    // Return empty state on error so app doesn't crash
+    return { persons: {}, rootId: null };
+  }
 };
 
 const normalizeData = (rows: RawPersonExcelRow[]): TreeData => {
@@ -168,32 +177,4 @@ export const getLayoutedElements = (
   });
 
   return { nodes: layoutedNodes, edges };
-};
-
-// Generate Mock Data for First Load
-export const generateMockData = (): TreeData => {
-  const root: Person = {
-    id: '1',
-    name: 'Nguyễn Văn Tổ',
-    gender: Gender.MALE,
-    birthYear: '1850',
-    deathYear: '1920',
-    parentId: null,
-    spouseIds: [],
-    childrenIds: ['2', '3', '4'],
-    generation: 1,
-    isRoot: true,
-    notes: 'Ông tổ dòng họ, người khai sinh lập nghiệp.'
-  };
-
-  const p2: Person = { id: '2', name: 'Nguyễn Văn Cả', gender: Gender.MALE, birthYear: '1880', deathYear: '1950', parentId: '1', spouseIds: [], childrenIds: ['5', '6'], generation: 2, isRoot: false };
-  const p3: Person = { id: '3', name: 'Nguyễn Thị Hai', gender: Gender.FEMALE, birthYear: '1882', deathYear: '1955', parentId: '1', spouseIds: [], childrenIds: [], generation: 2, isRoot: false };
-  const p4: Person = { id: '4', name: 'Nguyễn Văn Ba', gender: Gender.MALE, birthYear: '1885', deathYear: '1960', parentId: '1', spouseIds: [], childrenIds: ['7'], generation: 2, isRoot: false };
-  
-  const p5: Person = { id: '5', name: 'Nguyễn Văn Đích', gender: Gender.MALE, birthYear: '1910', deathYear: '1980', parentId: '2', spouseIds: [], childrenIds: [], generation: 3, isRoot: false };
-  const p6: Person = { id: '6', name: 'Nguyễn Thị Nở', gender: Gender.FEMALE, birthYear: '1912', deathYear: '1990', parentId: '2', spouseIds: [], childrenIds: [], generation: 3, isRoot: false };
-  const p7: Person = { id: '7', name: 'Nguyễn Văn Tôn', gender: Gender.MALE, birthYear: '1920', deathYear: '1995', parentId: '4', spouseIds: [], childrenIds: [], generation: 3, isRoot: false };
-
-  const persons = { '1': root, '2': p2, '3': p3, '4': p4, '5': p5, '6': p6, '7': p7 };
-  return { persons, rootId: '1' };
 };

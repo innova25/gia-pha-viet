@@ -10,7 +10,7 @@ import {
 } from '@xyflow/react';
 import { getLayoutedElements } from '../services/genealogyService';
 import CustomNode from './CustomNode';
-import { TreeData } from '../types';
+import { TreeData, GraphNodeData } from '../types';
 
 const nodeTypes = {
   personNode: CustomNode,
@@ -93,7 +93,9 @@ const TreeContainerContent = ({ data, onSelectPerson, searchTerm, expandedNodes,
     if (!searchTerm) return;
     
     const foundNode = nodes.find(n => {
-       const p = n.data as any;
+       const p = n.data as unknown as GraphNodeData;
+       if (!p || !p.name) return false;
+       
        const matchPerson = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id === searchTerm;
        const matchSpouse = p.spouse && (p.spouse.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.spouse.id === searchTerm);
        return matchPerson || matchSpouse;
@@ -101,7 +103,7 @@ const TreeContainerContent = ({ data, onSelectPerson, searchTerm, expandedNodes,
 
     if (foundNode) {
       const { x, y } = foundNode.position;
-      const p = foundNode.data as any;
+      const p = foundNode.data as unknown as GraphNodeData;
       const width = p.width || 280;
       
       setCenter(x + width / 2, y + 70, { zoom: 1.0, duration: 800 });

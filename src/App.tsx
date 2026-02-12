@@ -4,7 +4,7 @@ import TreeContainer from './components/TreeContainer';
 import AdminLogin from './components/AdminLogin';
 import PersonForm from './components/PersonForm';
 import { Gender, TreeData, Person } from './types';
-import { generateMockData, parseExcelToTree, exportTreeToExcel } from './services/genealogyService';
+import { loadTreeFromUrl, parseExcelToTree, exportTreeToExcel } from './services/genealogyService';
 
 export default function App() {
   const [treeData, setTreeData] = useState<TreeData>({ persons: {}, rootId: null });
@@ -30,15 +30,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const data = generateMockData();
-    setTreeData(data);
-    
-    if (data.rootId) {
-      const initialExpanded = new Set<string>();
-      initialExpanded.add(data.rootId);
-      data.persons[data.rootId]?.childrenIds.forEach(id => initialExpanded.add(id));
-      setExpandedNodes(initialExpanded);
-    }
+    const initData = async () => {
+      setIsLoading(true);
+      try {
+        // Attempt to load 'GiaPha_Export.xlsx' from the root/public directory
+        const data = await loadTreeFromUrl('./GiaPha_Export.xlsx');
+        setTreeData(data);
+        
+        if (data.rootId) {
+          const initialExpanded = new Set<string>();
+          initialExpanded.add(data.rootId);
+          data.persons[data.rootId]?.childrenIds.forEach(id => initialExpanded.add(id));
+          setExpandedNodes(initialExpanded);
+        }
+      } catch (error) {
+        console.error("Failed to load initial data from GiaPha_Export.xlsx", error);
+        // Fallback or empty state will be handled by UI
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initData();
   }, []);
 
   const toggleNodeExpansion = useCallback((nodeId: string) => {
@@ -89,7 +102,9 @@ export default function App() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const exists = Object.values(treeData.persons).some((p) => 
+    // Ép kiểu rõ ràng thành Person[] để tránh lỗi 'unknown' trong một số cấu hình TS
+    const persons = Object.values(treeData.persons) as Person[];
+    const exists = persons.some((p) => 
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id === searchTerm
     );
     if (!exists) alert("Không tìm thấy thành viên phù hợp trong dữ liệu.");
