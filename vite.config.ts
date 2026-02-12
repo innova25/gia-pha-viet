@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename)
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/gia-pha-viet/',
+  base: './', // Quan trọng: Giúp chạy được trên GitHub Pages (sub-folder)
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
