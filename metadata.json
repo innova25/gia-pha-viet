@@ -1,0 +1,5 @@
+{
+  "name": "Gia Phả Việt - Vietnamese Genealogy Viewer",
+  "description": "A traditional, read-only genealogy visualization tool optimized for large families (2300+ members). Supports Excel import/export and interactive tree exploration.",
+  "requestFramePermissions": []
+}
