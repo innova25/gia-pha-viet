@@ -38,10 +38,8 @@ export default function App() {
         setTreeData(data);
         
         if (data.rootId) {
-          const initialExpanded = new Set<string>();
-          initialExpanded.add(data.rootId);
-          data.persons[data.rootId]?.childrenIds.forEach(id => initialExpanded.add(id));
-          setExpandedNodes(initialExpanded);
+          const allNodeIds = new Set(Object.keys(data.persons));
+          setExpandedNodes(allNodeIds);
         }
       } catch (error) {
         console.error("Failed to load initial data from GiaPha_Export.xlsx", error);
@@ -83,10 +81,8 @@ export default function App() {
       setSidebarOpen(false);
 
       if (data.rootId) {
-        const initialExpanded = new Set<string>();
-        initialExpanded.add(data.rootId);
-        data.persons[data.rootId]?.childrenIds.forEach(id => initialExpanded.add(id));
-        setExpandedNodes(initialExpanded);
+        const allNodeIds = new Set(Object.keys(data.persons));
+        setExpandedNodes(allNodeIds);
       }
     } catch (error) {
       console.error(error);
